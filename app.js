@@ -3,6 +3,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { register } = require('module');
 
 const app = express();
 const PORT = 3000;
@@ -26,21 +27,28 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({storage: storage});
+const upload = multer({storage: storage, 
+    limits: {
+        fileSize: 1000000 // 1MB
+}});
 
 app.get('/', (req, res) => {
     return res.status(200).json({message: "OK"});
 })
 
-app.post('/upload', upload.single('file'), (req, res) => {
-    if(!req.file) {
-        req.status(400).json({message: "No file to upload"}); 
+app.post('/upload-multiple', upload.array('file'), (req, res) => {
+    if(!req.file || register.file.length==0)  {
+        return res.status(400).json({message: "No file to upload"}); 
     }
+
+    const uploadFiles = req.file.map((f) => ({
+        filename: f.filename,
+        path: f.path
+    }))
 
     res.status(200).json({
         message: "File uploaded successfully",
         filename: req.file.filename,
-        path: req.file.path
     })
 })
 
